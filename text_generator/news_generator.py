@@ -23,7 +23,7 @@ REAL_API_PORT = 5010
 CHROMADB_IP = "localhost"
 CHROMADB_PORT = 8001
 # IP and port for Ollama
-OLLAMA_IP = "192.168.1.72" 
+OLLAMA_IP = "localhost" 
 OLLAMA_PORT = 11434
 # IP and port for LLM API
 LLM_API_IP = "localhost"

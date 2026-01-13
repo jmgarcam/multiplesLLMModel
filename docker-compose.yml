@@ -1,5 +1,4 @@
-services:       
-
+services:
   norelational_db:
     build:
       context: ./norelational_db
@@ -18,8 +17,8 @@ services:
   # vector_db:
   #   build:
   #     context: ./vector_db
-  #   image: vector_db_image
-  #   container_name: vector_db
+  #   image: multiple_llm_vector_db_image
+  #   container_name: multiple_llm_vector_db
   #   ports:
   #     - "8001:8000"
   #   volumes:
@@ -52,9 +51,18 @@ services:
       - "6002:7000"
     networks:
       - multiple_llm_network_news
-   
+
+  ollama:
+    build:
+      context: .              
+      dockerfile: ollama/Dockerfile  # <--- Le decimos dónde está el archivo (necesario para que cargue los modelfiles)
+    container_name: multiple_llm_ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - multiple_llm_network_news
+
 networks:
   multiple_llm_network_news:
     external: true
-
 

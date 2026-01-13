@@ -10,7 +10,7 @@ import re
 # and populates ChromaDB collections to enable semantic search capabilities.
 
 IP_API= "localhost"
-API_PORT=5009
+API_PORT=5010
 
 # Text sanitization utility.
 def remove_html(text):

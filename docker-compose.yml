@@ -1,0 +1,60 @@
+services:       
+
+  norelational_db:
+    build:
+      context: ./norelational_db
+    image: multiple_llm_norelational_db_image
+    container_name: multiple_llm_norelational_db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root  ### no relational_db username
+      MONGO_INITDB_ROOT_PASSWORD: root  ### no relational_db password
+    ports:
+      - "27027:27017"
+    volumes:
+      - ./volumes/mongo_news_LLM:/data/db
+    networks:
+      - multiple_llm_network_news
+
+  # vector_db:
+  #   build:
+  #     context: ./vector_db
+  #   image: vector_db_image
+  #   container_name: vector_db
+  #   ports:
+  #     - "8001:8000"
+  #   volumes:
+  #     - ./volumes/chroma-data:/root/.chromadb
+  #   networks:
+  #     - multiple_llm_network_news
+
+  data_engine:
+    build:
+      context: ./data_engine
+    image: multiple_llm_data_engine_image
+    container_name: multiple_llm_data_engine
+    volumes:
+      - ./volumes/data_engine:/app
+    depends_on:
+      - norelational_db     
+    ports:
+      - "5010:5000"
+    networks:
+      - multiple_llm_network_news
+
+  context_manager:
+    build:
+      context: ./context_manager
+    image: multiple_llm_context_manager_image
+    container_name: multiple_llm_context_manager
+    depends_on:
+      - norelational_db     
+    ports:
+      - "6002:7000"
+    networks:
+      - multiple_llm_network_news
+   
+networks:
+  multiple_llm_network_news:
+    external: true
+
+

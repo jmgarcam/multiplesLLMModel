@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 import chromadb
 from chromadb.utils import embedding_functions
+import argparse 
 
 from ollama_execution import exec_ollama, exec_ollama_rag
 
@@ -82,6 +83,21 @@ def update_news(newspaper, news_id, tag, tag_value):
 
 if __name__ == '__main__':
 
+    # --- NUEVO BLOQUE: Argument Parser ---
+    parser = argparse.ArgumentParser(description="Ejecutar pipeline de generación de noticias.")
+    
+    # Argumento 1: Nombre del modelo
+    parser.add_argument('--model', required=True, type=str, help='Prefijo del nombre del modelo (ej: QWEN_7B_)')
+    
+    # Argumento 2: ID del LLM (Ahora se pide por comando)
+    parser.add_argument('--id_llm', required=True, type=int, help='Identificador numérico del LLM (ej: 1, 2)')
+    
+    args = parser.parse_args()
+    
+    cli_model_name = args.model
+    cli_id_llm = args.id_llm
+    # -------------------------------------
+
     # Define the simulation timeframe
     year = 2025
     start_month = 10
@@ -113,10 +129,14 @@ if __name__ == '__main__':
         for id_feature in features:
             
             # Model definitions for Ollama
-            modelo = "QWEN_7B_"
-            id_llm = 2  # Identifier for the LLM model in use
+            modelo = cli_model_name # <--- Asignacion desde argumento --model
+            
+            # Asignacion del ID desde argumento --id_llm
+            id_llm = cli_id_llm  
+            
             #1 = mistral 7B-instruct
             #2 = QWEN 7B
+            
             model_NO_RAG = modelo + "LLM_resumen_NO_RAG_T"+str(id_feature)
             model_RAG = modelo + "LLM_resumen_RAG_T"+str(id_feature)
 

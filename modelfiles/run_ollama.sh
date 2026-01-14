@@ -11,12 +11,13 @@ sleep 15
 # ----------------------------------------------------
 # 3. EJECUTAMOS TU SCRIPT DE MODELOS
 # ----------------------------------------------------
-echo "🚀 Lanzando script de creación de modelos..."
+echo "Lanzando script de creación de modelos..."
 
 # Ejecutamos tu script (asegurándonos de la ruta relativa)
 ./qwen/QWEN_7B_create_models.sh
+./llama/LLAMA_8B_create_models.sh
 
-echo "✅ Script de modelos finalizado."
+echo "Script de modelos finalizado."
 # ----------------------------------------------------
 
 # 4. CRÍTICO: Mantener el contenedor vivo

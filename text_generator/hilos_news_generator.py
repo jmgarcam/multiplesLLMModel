@@ -5,14 +5,16 @@ from datetime import datetime, timedelta
 from ollama import chat
 from ollama import Client
 import re
-from datetime import datetime
 import chromadb
 from chromadb.utils import embedding_functions
-import threading  # Única librería nueva necesaria
+import threading
+import argparse
+import sys
 
+# Asegúrate de tener este módulo disponible
 from ollama_execution import exec_ollama, exec_ollama_rag
 
-# --- Configuration Constants (IP addresses and ports for services) ---
+# --- Configuration Constants ---
 API_IP = "localhost"
 REAL_API_PORT = 5010
 CHROMADB_IP = "localhost"
@@ -22,22 +24,18 @@ OLLAMA_PORT = 11434
 LLM_API_IP = "localhost"
 LLM_API_PORT = 6002
 
-# Global counter to track LLM generation errors
-# Usamos un Lock para modificar estas variables globales de forma segura entre hilos
+# --- Global Variables & Locks ---
 data_lock = threading.Lock() 
 error_count = 0
 num_generated_news_NO_RAG = 0
 num_generated_news_RAG = 0
 
-# Utility function that sanitizes input text.
+# --- Helper Functions ---
 def remove_html(text):
-    # Remove HTML tags
     clean_text = re.sub(r'<[^>]+>', '', text)
-    # Remove extra spaces or unnecessary line breaks
     clean_text = re.sub(r'\s+', ' ', clean_text).strip()
     return clean_text
 
-# Retrieves the list of available newspaper sources.
 def get_newspapers():
     url = str("http://") + API_IP + ":" + str(REAL_API_PORT) + "/newspapers"
     try:
@@ -48,7 +46,6 @@ def get_newspapers():
         print(f"Error calling endpoint: {e}")
         return None
 
-# Fetches news articles for a specific newspaper and time window from the real news API.
 def read_newspaper_news(newspaper, date, shour, sminute, ehour, eminute):
     params = "date=" + date + "&shour=" + shour + "&sminute=" + sminute + "&ehour=" + ehour + "&eminute=" + eminute
     url = str("http://") + API_IP + ":" + str(REAL_API_PORT) + "/news/" + newspaper + "?"
@@ -60,14 +57,10 @@ def read_newspaper_news(newspaper, date, shour, sminute, ehour, eminute):
         print(f"Error calling endpoint: {e}")
         return None
 
-# Updates specific metadata tags for a news entry in the database. 
 def update_news(newspaper, news_id, tag, tag_value):
     url = str("http://") + API_IP + ":" + str(REAL_API_PORT) + "/news/" + newspaper + "/" + str(news_id)
     headers = {"Content-Type": "application/json"}
-
     data = {tag: tag_value}
-    print("Data:" + str(data))
-
     try:
         response = requests.put(url, json=data, headers=headers)
         response.raise_for_status()
@@ -76,29 +69,29 @@ def update_news(newspaper, news_id, tag, tag_value):
         print(f"Error updating entry: {e}")
         return None
 
-# Función Worker para ejecutar en cada hilo (contiene toda la lógica interna del bucle original)
+# --- Worker Function (Thread) ---
 def process_feature_thread(newspaper, id_feature, start_date, end_date, start_hour, end_hour, collection, id_llm, modelo):
-    # Referenciamos las variables globales que vamos a modificar
     global error_count
     global num_generated_news_NO_RAG
     global num_generated_news_RAG
 
-    
-    # Model definitions for Ollama
+    # Definición del modelo basada en el argumento recibido
     model_NO_RAG = modelo + "LLM_resumen_NO_RAG_T"+str(id_feature)
     model_RAG = modelo + "LLM_resumen_RAG_T"+str(id_feature)
 
     endpoint_url = "http://" + str(LLM_API_IP) + ":" + str(LLM_API_PORT) + "/newsLLM/" + newspaper
 
     # Date iteration loop
-    for i in range((end_date - start_date).days + 1):
+    # Calculamos la diferencia de días
+    delta_days = (end_date - start_date).days
+    
+    for i in range(delta_days + 1):
         current_date = start_date + timedelta(days=i)
         day = current_date.day
         month = current_date.month
         year = current_date.year
     
-        # Process each news item found for the current date/time
-        # Nota: start_hour y end_hour se pasan como argumentos para mantener la variable original
+        # Procesar noticias
         news_data = read_newspaper_news(newspaper, str(day) + "-" + str(month) + "-" + str(year), str(start_hour), "00", str(end_hour), "00")
         
         if news_data is not None and "items" in news_data:
@@ -107,24 +100,25 @@ def process_feature_thread(newspaper, id_feature, start_date, end_date, start_ho
                 document_NO_RAG = dict()
                 document_RAG = dict()
 
-                if news_item["description"]:
-                    # Perform RAG search: Find similar documents in ChromaDB using the headline
+                if news_item.get("description"):
+                    # RAG Search
                     query_text = news_item["headline"]
-                    results = collection.query(
-                            query_texts=[query_text],
-                            n_results=10 
-                        )
-                    context = results["documents"]
-                    
+                    try:
+                        results = collection.query(
+                                query_texts=[query_text],
+                                n_results=10 
+                            )
+                        context = results["documents"]
+                    except Exception as e:
+                        print(f"Error querying ChromaDB: {e}")
+                        context = [""]
+
                     news_item["description"] = remove_html(news_item["description"])
-                    print(len(news_item["description"].split()))
                     
                     try:
-                        print(f"[Thread-F{id_feature}] title: " + news_item["headline"])
-                        # print(news_item["description"]) # Comentado para no saturar consola en multihilo, descomentar si necesario
+                        print(f"[Thread-F{id_feature}] Processing: {news_item['headline'][:30]}...")
                         
-                        # Generate synthetic description WITHOUT RAG context
-                        # Ejecutamos Ollama y extraemos valor
+                        # --- NO RAG Generation ---
                         synthetic_desc_no_rag = exec_ollama(None, OLLAMA_IP, OLLAMA_PORT, "source_title: " + str(news_item["headline"]), "source_description: " + str(news_item["description"]), model_NO_RAG).get("synthetic_description", "N/A")
 
                         document_NO_RAG = {
@@ -135,9 +129,9 @@ def process_feature_thread(newspaper, id_feature, start_date, end_date, start_ho
                         "id_llm": id_llm,
                         "synthetic_description": synthetic_desc_no_rag,
                         }
-                        print(f"[Thread-F{id_feature}] NO-RAG created")
+                        # print(f"[Thread-F{id_feature}] NO-RAG created")
 
-                        # Generate synthetic description WITH RAG context
+                        # --- RAG Generation ---
                         synthetic_desc_rag = exec_ollama_rag(None, OLLAMA_IP, OLLAMA_PORT, "source_title: " + str(news_item["headline"]), "descripcion: " + str(news_item["description"]), context, model_RAG).get("synthetic_description", "N/A")
 
                         document_RAG = {
@@ -146,100 +140,126 @@ def process_feature_thread(newspaper, id_feature, start_date, end_date, start_ho
                         "timestamp_llm": int(datetime.now().timestamp()),
                         "id_feature": id_feature,
                         "id_llm": id_llm,
-                        "context": context[0],
+                        "context": context[0] if context else "",
                         "synthetic_description": synthetic_desc_rag,
                         }
-                        print(f"[Thread-F{id_feature}] RAG created")
+                        # print(f"[Thread-F{id_feature}] RAG created")
                 
-                        # Send generated documents to the storage API
+                        # --- Send to API ---
                         try:
+                            # Enviar RAG
                             if document_RAG:
                                 response = requests.post(endpoint_url, json=document_RAG)
-                                
-                                # Bloqueo para contador seguro
                                 with data_lock:
                                     num_generated_news_RAG += 1
-                                
                                 if response.status_code == 201:
-                                    print(f"[Thread-F{id_feature}] Document inserted successfully (RAG)")
-                                    # print(json.dumps(response.json(), indent=2, ensure_ascii=False))
+                                    print(f"[Thread-F{id_feature}] RAG Inserted OK")
                                 else:
-                                    print(f"Error {response.status_code}: {response.text}")
+                                    print(f"Error RAG API: {response.status_code}")
 
+                            # Enviar NO RAG
                             if document_NO_RAG:
                                 response = requests.post(endpoint_url, json=document_NO_RAG)
-                                
-                                # Bloqueo para contador seguro
                                 with data_lock:
                                     num_generated_news_NO_RAG += 1
-                                
                                 if response.status_code == 201:
-                                    print(f"[Thread-F{id_feature}] Document inserted successfully (NO RAG)")
-                                    # print(json.dumps(response.json(), indent=2, ensure_ascii=False))
+                                    print(f"[Thread-F{id_feature}] NO-RAG Inserted OK")
                                 else:
-                                    print(f"Error {response.status_code}: {response.text}")
+                                    print(f"Error NO-RAG API: {response.status_code}")
 
                         except requests.exceptions.RequestException as e:
-                            print("Error connecting to API:", e)
+                            print("Error connecting to Storage API:", e)
                         
                     except Exception as e:
                         print("Error processing news with Ollama:", e)
                         with data_lock:
-                            error_count = error_count + 1
+                            error_count += 1
 
+# --- Main Execution ---
 if __name__ == '__main__':
 
-    # Define the simulation timeframe
-    year = 2025
-    start_month = 10
-    end_month = 11
-    start_day = 25
-    end_day = 11
+    # --- 1. Argument Parser ---
+    parser = argparse.ArgumentParser(description="Ejecutar pipeline de generación de noticias con Hilos.")
+    
+    parser.add_argument('--model', required=True, type=str, help='Prefijo del nombre del modelo (ej: QWEN_7B_)')
+    parser.add_argument('--id_llm', required=True, type=int, help='ID numérico del LLM (ej: 1, 2)')
+    parser.add_argument('--sdate', required=True, type=str, help='Fecha inicio dd-mm-yyyy')
+    parser.add_argument('--edate', required=True, type=str, help='Fecha fin dd-mm-yyyy')
+    
+    args = parser.parse_args()
+
+    # --- 2. Date Processing ---
+    try:
+        start_date = datetime.strptime(args.sdate, "%d-%m-%Y")
+        end_date = datetime.strptime(args.edate, "%d-%m-%Y")
+        
+        if start_date > end_date:
+            print("Error: Fecha inicio posterior a fecha fin.")
+            sys.exit(1)
+    except ValueError:
+        print("Error: Formato de fecha incorrecto. Use dd-mm-yyyy")
+        sys.exit(1)
+
+    print(f"Iniciando proceso multihilo del {start_date.date()} al {end_date.date()}")
+    print(f"Modelo: {args.model} | ID LLM: {args.id_llm}")
+
+    # Variables fijas de hora
     start_hour = 0
     end_hour = 23
-    start_date = datetime(year, start_month, start_day)
-    end_date = datetime(year, end_month, end_day)
-
-    # Initialize counters (ya definidos arriba globalmente, pero mantenemos lógica de init si fuera local)
-    # error_count = 0 
     
-    # Initialize ChromaDB client and embedding function (Multilingual E5)
+    # Init Chroma
     chroma_client = chromadb.HttpClient(host=CHROMADB_IP, port=CHROMADB_PORT)
     embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
      model_name="intfloat/multilingual-e5-large"
     )
 
-    features = [3,2,1]  # Feature identifiers to iterate over, equivalent to temperatures under study
-    model = "QWEN_7B_"
-    id_llm = 2  # Identifier for the LLM model in use
-    #1 = mistral 7B-instruct
-    #2 = QWEN 7B
-
-    # Main processing loop: Iterate through newspapers
-    for newspaper in get_newspapers()["newspapers"]:
-        
-        # Connect to or create the vector collection for the specific newspaper
-        # Lo hacemos aquí antes de los hilos para pasar el objeto ya creado
-        collection = chroma_client.get_or_create_collection(name="real_news_data_" + str(newspaper), embedding_function=embedding_fn)
-        
-        # Lista para guardar los hilos activos
-        threads = []
-
-        # feature loop -> AHORA EN HILOS
-        for id_feature in features:
-            print(f"Lanzando hilo para Newspaper: {newspaper}, Feature: {id_feature}")
+    features = [3,2,1] 
+    
+    # --- 3. Main Loop ---
+    newspapers_list = get_newspapers()
+    
+    if newspapers_list:
+        for newspaper in newspapers_list["newspapers"]:
             
-            # Creamos el hilo pasando TODAS las variables necesarias que antes estaban en el scope local
-            t = threading.Thread(target=process_feature_thread, args=(
-                newspaper, 
-                id_feature, 
-                start_date, 
-                end_date, 
-                start_hour, 
-                end_hour, 
-                collection, 
-                id_llm,
-                model
-            ))
-            threads.append(t)
-            t.start()
+            # Crear colección para pasar al hilo
+            collection = chroma_client.get_or_create_collection(name="real_news_data_" + str(newspaper), embedding_function=embedding_fn)
+            
+            threads = []
+            
+            # Lanzar hilos por feature
+            for id_feature in features:
+                print(f"Lanzando hilo -> Newspaper: {newspaper}, Feature: {id_feature}")
+                
+                t = threading.Thread(target=process_feature_thread, args=(
+                    newspaper, 
+                    id_feature, 
+                    start_date, # Pasamos el objeto datetime parseado de args
+                    end_date,   # Pasamos el objeto datetime parseado de args
+                    start_hour, 
+                    end_hour, 
+                    collection, 
+                    args.id_llm, # Pasamos ID LLM de args
+                    args.model   # Pasamos Model Name de args
+                ))
+                threads.append(t)
+                t.start()
+            
+            # --- ESPERAR A QUE TERMINEN LOS HILOS ---
+            # Es importante esperar aquí (o fuera del bucle de periódicos) para que el script no termine
+            # antes de que los hilos acaben su trabajo.
+            for t in threads:
+                t.join()
+            
+            print(f"--- Finalizados hilos para {newspaper} ---")
+
+    else:
+        print("No se pudieron recuperar periódicos.")
+
+    # Print final statistics
+    print("\n================================================")
+    print("RESUMEN DE EJECUCIÓN")
+    print("Errores de Ollama: " + str(error_count))
+    print("Noticias RAG generadas: " + str(num_generated_news_RAG))
+    print("Noticias NO RAG generadas: " + str(num_generated_news_NO_RAG))
+    print("Hora fin: " + str(datetime.now()))
+    print("================================================")

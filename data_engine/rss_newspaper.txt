@@ -1,6 +1,0 @@
-El Pais: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada  
-El Mundo: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml 
-La Vanguardia: https://www.lavanguardia.com/rss/home.xml
-ABC: https://www.abc.es/rss/2.0/portada/
-El Correo: https://www.elcorreo.com/rss/2.0/portada/
-La Verdad: https://www.laverdad.es/rss/2.0/portada/

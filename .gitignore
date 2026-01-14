@@ -1,3 +1,6 @@
 *.pyc
 volumes/
 ollama/
+data_engine/rss_newspaper.txt
+Pipfile
+*.out

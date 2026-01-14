@@ -17,7 +17,7 @@ API_IP = "localhost"
 REAL_API_PORT = 5010
 CHROMADB_IP = "localhost"
 CHROMADB_PORT = 8001
-OLLAMA_IP = "192.168.1.72" 
+OLLAMA_IP = "localhost" 
 OLLAMA_PORT = 11434
 LLM_API_IP = "localhost"
 LLM_API_PORT = 6002
@@ -190,11 +190,11 @@ def process_feature_thread(newspaper, id_feature, start_date, end_date, start_ho
 if __name__ == '__main__':
 
     # Define the simulation timeframe
-    year = 2026
-    start_month = 1
-    end_month = 1
-    start_day = 8
-    end_day = 8
+    year = 2025
+    start_month = 10
+    end_month = 11
+    start_day = 25
+    end_day = 11
     start_hour = 0
     end_hour = 23
     start_date = datetime(year, start_month, start_day)

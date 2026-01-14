@@ -49,8 +49,8 @@ def read_newspapers():
 if __name__ == "__main__":
     print("Start - " + str(datetime.now()))
     # Update these dates as needed
-    start_date = datetime.strptime("08-01-2026", "%d-%m-%Y")
-    end_date = datetime.strptime("08-01-2026", "%d-%m-%Y")
+    start_date = datetime.strptime("25-09-2025", "%d-%m-%Y")
+    end_date = datetime.strptime("25-10-2025", "%d-%m-%Y")
    
 
     chroma_client = chromadb.HttpClient(host='localhost', port=8001)

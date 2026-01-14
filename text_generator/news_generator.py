@@ -55,6 +55,7 @@ def get_newspapers():
 def read_newspaper_news(newspaper, date, shour, sminute, ehour, eminute):
     params = "date=" + date + "&shour=" + shour + "&sminute=" + sminute + "&ehour=" + ehour + "&eminute=" + eminute
     url = str("http://") + API_IP + ":" + str(REAL_API_PORT) + "/news/" + newspaper + "?"
+    
     try:
         response = requests.get(url, params=params)
         response.raise_for_status()
@@ -82,11 +83,11 @@ def update_news(newspaper, news_id, tag, tag_value):
 if __name__ == '__main__':
 
     # Define the simulation timeframe
-    year = 2026
-    start_month = 1
-    end_month = 1
-    start_day = 8
-    end_day = 8
+    year = 2025
+    start_month = 10
+    end_month = 11
+    start_day = 26
+    end_day = 11
     start_hour = 0
     end_hour = 23
     start_date = datetime(year, start_month, start_day)
@@ -105,10 +106,10 @@ if __name__ == '__main__':
 
     features = [3,2,1]  # Feature identifiers to iterate over, equivalent to temperatures under study
     
-
+    
     # Main processing loop: Iterate through newspapers, features, and dates
     for newspaper in get_newspapers()["newspapers"]:
-
+        
         for id_feature in features:
             
             # Model definitions for Ollama
@@ -122,7 +123,7 @@ if __name__ == '__main__':
             # Connect to or create the vector collection for the specific newspaper
             collection = chroma_client.get_or_create_collection(name="real_news_data_" + str(newspaper), embedding_function=embedding_fn)
             endpoint_url = "http://" + str(LLM_API_IP) + ":" + str(LLM_API_PORT) + "/newsLLM/" + newspaper
-
+            
             # Date iteration loop
             for i in range((end_date - start_date).days + 1):
                 current_date = start_date + timedelta(days=i)

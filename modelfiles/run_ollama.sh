@@ -5,8 +5,8 @@ ollama serve &
 # Guardamos el ID del proceso del servidor para esperarlo luego
 PID=$!
 
-echo "⏳ Esperando 15 segundos a que el servidor esté listo..."
-sleep 15
+echo "⏳ Esperando 60 segundos a que el servidor esté listo..."
+sleep 60
 
 # ----------------------------------------------------
 # 3. EJECUTAMOS TU SCRIPT DE MODELOS

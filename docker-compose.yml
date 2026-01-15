@@ -52,17 +52,31 @@ services:
     networks:
       - multiple_llm_network_news
 
-  ollama:
+  ollama_qwen:
     build:
       context: .              
-      dockerfile: ollama/Dockerfile  # <--- Le decimos dónde está el archivo (necesario para que cargue los modelfiles)
-    image: multiple_llm_context_ollama_image
-    container_name: multiple_llm_ollama
+      dockerfile: ollama_qwen/Dockerfile  # <--- Le decimos dónde está el archivo (necesario para que cargue los modelfiles)
+    image: multiple_llm_ollama_qwen_image
+    container_name: multiple_llm_ollama_qwen
     volumes:
-      - ./volumes/ollama:/app
-      - ./volumes/ollama_models:/root/.ollama
+      - ./volumes/ollama_qwen:/app
+      - ./volumes/ollama_qwen_models:/root/.ollama
     ports:
       - "11434:11434"
+    networks:
+      - multiple_llm_network_news
+
+  ollama_gema:
+    build:
+      context: .              
+      dockerfile: ollama_gema/Dockerfile  # <--- Le decimos dónde está el archivo (necesario para que cargue los modelfiles)
+    image: multiple_llm_ollama_gema_image
+    container_name: multiple_llm_ollama_gema
+    volumes:
+      - ./volumes/ollama_gema:/app
+      - ./volumes/ollama_gema_models:/root/.ollama
+    ports:
+      - "11435:11434"
     networks:
       - multiple_llm_network_news
 

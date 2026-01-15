@@ -15,7 +15,6 @@ echo "Lanzando script de creación de modelos..."
 
 # Ejecutamos tu script (asegurándonos de la ruta relativa)
 ./qwen/QWEN_7B_create_models.sh
-./llama/LLAMA_8B_create_models.sh
 
 echo "Script de modelos finalizado."
 # ----------------------------------------------------

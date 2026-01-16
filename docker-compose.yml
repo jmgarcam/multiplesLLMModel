@@ -63,6 +63,11 @@ services:
       - ./volumes/ollama_qwen_models:/root/.ollama
     ports:
       - "11434:11434"
+    environment:
+      # Asignamos 4 núcleos exclusivos
+      - OLLAMA_NUM_THREADS=4
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_KEEP_ALIVE=24h
     networks:
       - multiple_llm_network_news
 
@@ -77,6 +82,11 @@ services:
       - ./volumes/ollama_gema_models:/root/.ollama
     ports:
       - "11435:11434"
+    environment:
+      # Asignamos 4 núcleos exclusivos
+      - OLLAMA_NUM_THREADS=4
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_KEEP_ALIVE=24h
     networks:
       - multiple_llm_network_news
 

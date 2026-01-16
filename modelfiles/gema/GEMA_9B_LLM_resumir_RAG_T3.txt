@@ -1,4 +1,4 @@
-FROM gemma2:9b
+FROM gemma2
 
 # 1. Contexto y Predicción
 PARAMETER num_ctx 4096

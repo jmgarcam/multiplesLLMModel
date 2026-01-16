@@ -1,4 +1,4 @@
-FROM gemma2:9b
+FROM gemma2
 
 # Parámetros de generación
 PARAMETER temperature 0.75

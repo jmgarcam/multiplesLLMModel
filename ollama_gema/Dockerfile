@@ -1,4 +1,4 @@
-FROM ollama/ollama:0.1.25
+FROM ollama/ollama:0.2.1
 
 WORKDIR /root/modelfiles
 

@@ -98,10 +98,14 @@ def get_llm_news(newspaper):
     news_response = read_newspaper_news(newspaper, date, start_hour, start_minute, end_hour, end_minute)
     real_news = news_response.get("items") if news_response else []
 
+    if id_llm:  # si no es None ni ""
+        query_filter = {"id_llm": id_llm}
+
     entries = []
-    for i in range(len(real_news)):
+    for i in range(len(real_news)):  
+
+        query_filter["id_news"] = real_news[i].get("_id")
         
-        query_filter = {"id_news": real_news[i].get("_id")}
         cursor = collection.find(query_filter, {'_id': 0, 'timestamp_llm': 1, 'id_feature': 1, 'synthetic_description': 1, "context": 1, "id_llm": 1})
     
         for entry in cursor:

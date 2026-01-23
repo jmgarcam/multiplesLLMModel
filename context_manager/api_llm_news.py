@@ -87,6 +87,7 @@ def get_llm_news(newspaper):
     start_minute = request.args.get('sminute') # start minute (0-59)
     end_hour = request.args.get('ehour')       # end hour optional (0-23)
     end_minute = request.args.get('eminute')   # end minute optional (0-59)
+    id_llm = request.args.get('id_llm')
 
 
     if int(rag) == 1:

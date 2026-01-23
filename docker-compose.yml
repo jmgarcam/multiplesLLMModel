@@ -112,7 +112,7 @@ services:
   ollama_llama:
     build:
       context: .              
-      dockerfile: ollama_llama/Dockerfile
+      dockerfile: ollama_llama/Dockerfile  # <--- Le decimos dónde está el archivo (necesario para que cargue los modelfiles)
     image: multiple_llm_ollama_llama_image
     container_name: multiple_llm_ollama_llama
     volumes:

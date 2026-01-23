@@ -108,6 +108,35 @@ services:
                 count: 1
                 capabilities: [gpu]
 
+  
+  ollama_llama:
+    build:
+      context: .              
+      dockerfile: ollama_llama/Dockerfile
+    image: multiple_llm_ollama_llama_image
+    container_name: multiple_llm_ollama_llama
+    volumes:
+      - ./volumes/ollama_llama:/app
+      - ./volumes/ollama_llama_models:/root/.ollama
+    ports:
+      - "11436:11434"
+    environment:
+      # Asignamos 4 núcleos exclusivos
+      - OLLAMA_NUM_THREADS=4
+      #- OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_FLASH_ATTENTION=0
+      - OLLAMA_KV_CACHE_TYPE=f16
+    networks:
+      - multiple_llm_network_news
+    deploy:
+      resources:
+        reservations:
+          devices:
+             -  driver: nvidia
+                count: 1
+                capabilities: [gpu]
+
   ollama_gema:
     build:
       context: .              

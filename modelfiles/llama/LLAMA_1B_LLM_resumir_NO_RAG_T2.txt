@@ -1,4 +1,4 @@
-FROM llama3.1
+FROM llama3.2:1b
 
 # Parámetros de generación (Mantenemos tu configuración)
 PARAMETER temperature 0.75

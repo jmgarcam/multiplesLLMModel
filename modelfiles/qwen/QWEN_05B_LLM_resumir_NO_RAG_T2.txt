@@ -1,17 +1,29 @@
-FROM llama3.1
+FROM qwen2.5:0.5b
 
-# Parámetros de generación (Mantenemos tu configuración)
-PARAMETER temperature 1
+
+PARAMETER temperature 0.75
+
+
 PARAMETER num_predict 256
+
+
 PARAMETER top_k 50
 PARAMETER top_p 0.9
 
-# --- CAMBIO IMPORTANTE: Tokens de parada de Llama 3 ---
-# Llama 3.1 no usa <|im_end|>, usa estos tokens:
-PARAMETER stop "<|start_header_id|>"
-PARAMETER stop "<|end_header_id|>"
-PARAMETER stop "<|eot_id|>"
-PARAMETER stop "<|end_of_text|>"
+
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+{{ .Response }}<|im_end|>"""
+
+
+# Esto evita que el modelo alucine texto después de cerrar el JSON.
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|endoftext|>"
+
 
 SYSTEM """
 Eres un asistente experto en redacción periodística y generación de datos estructurados.

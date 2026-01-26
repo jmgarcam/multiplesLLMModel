@@ -1,4 +1,4 @@
-FROM mistral:7b-instruct
+FROM ministral-3:3b
 
 SYSTEM """
 Eres un generador controlado de descripciones periodísticas sintéticas.

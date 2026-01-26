@@ -1,7 +1,7 @@
-FROM qwen2.5:7b
+FROM qwen2.5:0.5b
 
 
-PARAMETER temperature 0.75
+PARAMETER temperature 0.5
 
 
 PARAMETER num_predict 256

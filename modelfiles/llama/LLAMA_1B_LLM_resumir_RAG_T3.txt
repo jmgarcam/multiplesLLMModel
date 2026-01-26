@@ -1,4 +1,4 @@
-FROM llama3.1
+FROM llama3.2:1b
 
 # 1. Contexto y Predicción
 # Si tus fragmentos de RAG son muy largos, puedes subir num_ctx (ej. 8192)

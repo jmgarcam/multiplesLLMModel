@@ -1,27 +1,23 @@
-FROM qwen2.5:7b
+FROM llama3.2:1b
 
-
+# 1. Contexto y Predicción
+# Si tus fragmentos de RAG son muy largos, puedes subir num_ctx (ej. 8192)
 PARAMETER num_ctx 4096
-
-PARAMETER temperature 1.0
-
 PARAMETER num_predict 256
 
+# 2. Creatividad
+# NOTA: Para JSON estricto en Llama 3, a veces Temp 1.0 es muy alta.
+# Si notas errores de sintaxis, bájala a 0.2
+PARAMETER temperature 1.0
 PARAMETER top_k 50
 PARAMETER top_p 0.9
 
-TEMPLATE """{{ if .System }}<|im_start|>system
-{{ .System }}<|im_end|>
-{{ end }}{{ if .Prompt }}<|im_start|>user
-{{ .Prompt }}<|im_end|>
-{{ end }}<|im_start|>assistant
-{{ .Response }}<|im_end|>"""
-
-
-# Esto evita que el modelo alucine texto después de cerrar el JSON.
-PARAMETER stop "<|im_start|>"
-PARAMETER stop "<|im_end|>"
-PARAMETER stop "<|endoftext|>"
+# 3. Tokens de parada específicos de Llama 3
+# Es vital cambiarlos porque <|im_end|> no funciona aquí.
+PARAMETER stop "<|start_header_id|>"
+PARAMETER stop "<|end_header_id|>"
+PARAMETER stop "<|eot_id|>"
+PARAMETER stop "<|end_of_text|>"
 
 SYSTEM """
 Eres un asistente experto en redacción periodística asistida por contexto (RAG).
